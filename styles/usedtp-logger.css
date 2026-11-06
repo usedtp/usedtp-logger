@@ -1,0 +1,16 @@
+.usedtp-logger-viewer .ul-viewer { display: flex; flex-direction: column; gap: 6px; }
+.usedtp-logger-viewer .ul-bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; position: sticky; top: 0; background: var(--color-bg, inherit); padding-bottom: 4px; }
+.usedtp-logger-viewer .ul-card { border: 1px solid var(--color-border, #888); border-left-width: 5px; border-radius: 4px; padding: 6px 8px; }
+.usedtp-logger-viewer .ul-error { border-left-color: #c0392b; }
+.usedtp-logger-viewer .ul-warn { border-left-color: #d68910; }
+.usedtp-logger-viewer .ul-report { border-left-color: #2e86c1; }
+.usedtp-logger-viewer .ul-unclear-auto, .usedtp-logger-viewer .ul-unclear { border-left-color: #8e44ad; }
+.usedtp-logger-viewer .ul-head { font-size: 0.9em; }
+.usedtp-logger-viewer .ul-status { float: right; font-style: italic; }
+.usedtp-logger-viewer .ul-msg { margin: 4px 0; }
+.usedtp-logger-viewer pre { white-space: pre-wrap; max-height: 300px; overflow: auto; font-size: 0.8em; }
+.usedtp-logger-viewer .ul-actions { display: flex; gap: 4px; }
+.usedtp-logger-viewer .ul-actions button { flex: 0 0 auto; width: auto; }
+.usedtp-logger-report textarea { width: 100%; }
+.usedtp-logger-report label { display: block; margin-top: 4px; }
+.chat-log .ul-flash { outline: 3px solid #2e86c1; transition: outline 0.3s; }

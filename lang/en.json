@@ -1,0 +1,60 @@
+{
+  "USEDTPLOG": {
+    "received": "{user} sent a {category} report for {module}.",
+    "failed": "{module}: {label} failed. Logged for the GM.",
+    "noModules": "No modules are using the usedtp Logger.",
+    "module": "Module",
+    "category": "Type",
+    "error": "Error: something went wrong",
+    "unclear": "Unclear: it worked, but I don't understand why",
+    "comment": "What happened?",
+    "placeholder": "What you did, what you expected, what you got.",
+    "disclaimer": "Your name, the module, Foundry and system versions, and the scene are sent with the report.",
+    "reportTitle": "Report a problem",
+    "send": "Send",
+    "outcome_logged": "Report logged.",
+    "outcome_sent": "Report sent to the GM.",
+    "outcome_queued": "No GM online. The report will be sent when a GM connects.",
+    "reportMenuName": "Report a problem",
+    "reportMenuLabel": "Error / Unclear",
+    "reportMenuHint": "Send an Error or Unclear report for any usedtp module.",
+    "settings": {
+      "consoleLevel": {
+        "name": "Console detail",
+        "hint": "How much the usedtp modules write to this browser's console (F12)."
+      },
+      "persistInfo": {
+        "name": "Log info to file",
+        "hint": "Also write info entries (normal actions) to Data/usedtp-logs/. Warnings, errors and reports are always written."
+      },
+      "persistDebug": {
+        "name": "Log debug to file",
+        "hint": "Write debug entries too. Turn on only while chasing a problem: it writes a lot."
+      }
+    },
+    "viewer": {
+      "title": "usedtp Logs",
+      "menuName": "Log viewer",
+      "menuLabel": "Open logs",
+      "menuHint": "Errors, warnings and Error/Unclear reports from every usedtp module.",
+      "allModules": "All modules",
+      "kind_problems": "Errors, unclear, reports",
+      "kind_reports": "Reports only",
+      "kind_everything": "Everything",
+      "showClosed": "Show closed",
+      "refresh": "Refresh",
+      "export": "Export JSON",
+      "empty": "Nothing to show.",
+      "report": "Report",
+      "unclearAuto": "Unclear (auto)",
+      "fixed": "Fixed",
+      "wontfix": "Won't fix",
+      "details": "Details",
+      "markFixed": "Mark fixed",
+      "markWontfix": "Won't fix",
+      "reopen": "Reopen",
+      "showMessage": "Show in chat",
+      "notInLog": "That message is not in the chat log."
+    }
+  }
+}
