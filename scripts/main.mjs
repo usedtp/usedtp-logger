@@ -55,9 +55,8 @@ Hooks.once("init", () => {
 
 Hooks.once("ready", () => {
   game.socket?.on(core.CHANNEL, core.onSocket);
+  core.announce();
   setTimeout(() => core.resendQueued(), 3000);
-  Hooks.on("userConnected", (user, connected) => {
-    if (connected && user?.isGM) setTimeout(() => core.resendQueued(), 3000);
-  });
+  Hooks.on("userConnected", (user, connected) => core.onUserConnected(user, connected));
   globalThis.addEventListener?.("beforeunload", () => { core.flush(); });
 });

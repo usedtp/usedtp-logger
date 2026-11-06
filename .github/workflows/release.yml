@@ -30,6 +30,11 @@ jobs:
         if: steps.v.outputs.skip != 'true'
         with:
           node-version: 22
+      - name: Test
+        if: steps.v.outputs.skip != 'true'
+        run: |
+          for f in scripts/*.mjs; do node --check "$f"; done
+          npm test
 
       - name: Write repository URLs into module.json
         if: steps.v.outputs.skip != 'true'

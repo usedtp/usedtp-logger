@@ -1,8 +1,8 @@
 {
   "id": "usedtp-logger",
   "title": "usedtp Logger",
-  "description": "One shared log and Error/Unclear report system for all usedtp modules. Logs are written by the active GM's browser to Data/usedtp-logs/.",
-  "version": "1.0.0",
+  "description": "One shared log and Error/Unclear report system for all usedtp modules. Logs are written by a GM's browser to Data/usedtp-logs/.",
+  "version": "1.0.1",
   "authors": [
     {
       "name": "Mick Kitor"

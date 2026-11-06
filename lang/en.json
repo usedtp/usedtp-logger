@@ -1,7 +1,10 @@
 {
   "USEDTPLOG": {
     "received": "{user} sent a {category} report for {module}.",
-    "failed": "{module}: {label} failed. Logged for the GM.",
+    "failed_logged": "{module}: {label} failed. Logged.",
+    "failed_sent": "{module}: {label} failed. Sent to the GM.",
+    "failed_queued": "{module}: {label} failed. Saved on this computer; it will be sent when a GM is online.",
+    "failed_console": "{module}: {label} failed. Not saved; see the browser console (F12).",
     "noModules": "No modules are using the usedtp Logger.",
     "module": "Module",
     "category": "Type",
@@ -14,7 +17,7 @@
     "send": "Send",
     "outcome_logged": "Report logged.",
     "outcome_sent": "Report sent to the GM.",
-    "outcome_queued": "No GM online. The report will be sent when a GM connects.",
+    "outcome_queued": "No GM with usedtp Logger online. The report will be sent when one connects.",
     "reportMenuName": "Report a problem",
     "reportMenuLabel": "Error / Unclear",
     "reportMenuHint": "Send an Error or Unclear report for any usedtp module.",

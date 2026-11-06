@@ -8,8 +8,11 @@ Manifest URL: `https://github.com/usedtp/usedtp-logger/releases/latest/download/
 Modules that use it list it under `relationships.requires`, so Foundry installs it with them.
 
 ## Where logs go
-- `Data/usedtp-logs/<module>/YYYY-MM-DD/HHMMSS-nnn-id.json`, written by the active GM's browser in batches (every 30 s; errors and reports at once).
-- Player browsers send warnings, errors and reports to the GM. With no GM online they wait in the browser and are sent when a GM connects.
+- `Data/usedtp-logs/<module>/YYYY-MM-DD/HHMMSS-nnn-id.json`, written in batches (every 30 s; errors and reports at once).
+- A GM's browser writes its own entries.
+- A player's browser sends its entries to every GM. One GM writes them: the GM with the lowest user id among GMs running usedtp Logger. A GM whose browser has the logger off is never chosen.
+- With no GM running usedtp Logger online, a player's entries wait in the browser and are sent when one connects.
+- The viewer shows each entry once, even if two GMs wrote it.
 - Remove old logs by hand from the Data folder. Browsers can't delete files.
 
 ## Settings
@@ -24,7 +27,10 @@ Modules that use it list it under `relationships.requires`, so Foundry installs 
 const log = UsedtpLogger.register("my-module", { title: "My Module" });
 log.info("text", data); log.warn("text", data); log.error("text", err, data);
 log.unclear("unique-key", "text", data);       // once per session per key
-await log.guard("label", async () => { ... }); // logs and shows an error if it throws
+await log.guard("label", async () => { ... }); // logs and shows an error if it throws; the notice says Logged, Sent or Saved on this computer
 log.openReport("error" | "unclear", context);
 ```
 Uncaught errors whose stack points into a registered module's folder are logged automatically.
+
+## Tests
+`npm test` runs Node tests with a mocked Foundry.

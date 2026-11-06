@@ -3,9 +3,15 @@
  *
  * Every usedtp module registers here and gets one logger. Entries go to:
  *  - the browser console (detail level is a client setting), and
- *  - the shared file log in Data/usedtp-logs/<module>/YYYY-MM-DD/HHMMSS-nnn-id.json, written only by the
- *    active GM's browser. Other browsers send warn/error/report entries to the GM by socket. With no GM
- *    online they wait in local storage and are sent when a GM connects.
+ *  - the shared file log in Data/usedtp-logs/<module>/YYYY-MM-DD/HHMMSS-nnn-id.json.
+ *
+ * Who writes:
+ *  - A GM's browser writes its own entries directly.
+ *  - A player's browser sends its entries to every GM by socket. Exactly one GM writes them: the GM with the
+ *    lowest user id among GMs that announced they run usedtp Logger (hello/here handshake). A GM whose
+ *    browser has the logger off never announces, so it is never chosen.
+ *  - With no such GM online, a player's entries wait in local storage and are sent when one connects.
+ *  - The viewer drops repeated entry ids, so a rare double write never shows twice.
  *
  * Browsers cannot delete files through Foundry, so old logs are removed by hand from the Data folder.
  */
@@ -28,8 +34,20 @@ let seq = 0;
 const madeDirs = new Set();
 const waiting = new Map();
 let resending = false;
+const loggerGMs = new Set();
 
-export const isWriter = () => !!game.user?.isGM && (game.users?.activeGM?.id ?? game.user.id) === game.user.id;
+/** Any GM writes its own entries. */
+export const isWriter = () => !!game.user?.isGM;
+
+/** The GM that writes players' entries: lowest id among online GMs running usedtp Logger. */
+export function writerId() {
+  const ids = [...loggerGMs].filter(id => { const u = game.users?.get(id); return u?.isGM && u.active !== false; }).sort();
+  return ids[0] ?? null;
+}
+const isPlayerWriter = () => isWriter() && writerId() === game.user?.id;
+
+/** Test hook: forget known GMs. */
+export function _resetPresence() { loggerGMs.clear(); waiting.clear(); queue = []; clearTimeout(timer); timer = null; }
 const FP = () => foundry.applications.apps.FilePicker.implementation ?? foundry.applications.apps.FilePicker;
 
 function setting(key, fallback) {
@@ -160,7 +178,7 @@ function emitWithAck(entry) {
   return new Promise(res => {
     const t = setTimeout(() => { waiting.delete(entry.id); res(false); }, ACK_MS);
     waiting.set(entry.id, () => { clearTimeout(t); waiting.delete(entry.id); res(true); });
-    game.socket.emit(CHANNEL, { action: "entry", entry });
+    game.socket.emit(CHANNEL, { action: "entry", entry, from: game.user?.id });
   });
 }
 
@@ -173,27 +191,51 @@ function enqueueLocal(entry) {
 /** @returns {Promise<"logged"|"sent"|"queued">} */
 export async function deliver(entry) {
   if (isWriter()) { await receive(entry); return "logged"; }
-  if (!game.ready || !game.users?.activeGM) { enqueueLocal(entry); return "queued"; }
+  if (!game.ready || !writerId()) { enqueueLocal(entry); return "queued"; }
   if (await emitWithAck(entry)) return "sent";
   enqueueLocal(entry);
   return "queued";
 }
 
+/** Tells every browser this one runs usedtp Logger. GMs answer with "here". */
+export function announce() {
+  if (isWriter()) loggerGMs.add(game.user.id);
+  game.socket?.emit(CHANNEL, { action: "hello", from: game.user?.id });
+}
+
+function noteGM(userId) {
+  if (!userId || !game.users?.get(userId)?.isGM) return false;
+  const isNew = !loggerGMs.has(userId);
+  loggerGMs.add(userId);
+  return isNew;
+}
+
+export function onUserConnected(user, connected) {
+  if (!connected) { loggerGMs.delete(user?.id); return; }
+}
+
 export function onSocket(data) {
   if (data?.action === "entry") {
-    if (!isWriter() || !data.entry) return;
+    if (!isPlayerWriter() || !data.entry) return;
     receive(data.entry)
       .then(() => game.socket.emit(CHANNEL, { action: "ack", id: data.entry.id, to: data.entry.userId }))
       .catch(err => console.error(`${MODULE_ID} | entry not logged`, err));
   } else if (data?.action === "ack") {
     if (data.to === game.user?.id) waiting.get(data.id)?.();
+  } else if (data?.action === "hello") {
+    const isNew = noteGM(data.from);
+    if (isWriter()) game.socket.emit(CHANNEL, { action: "here", from: game.user.id, to: data.from });
+    if (isNew) setTimeout(() => resendQueued(), 1000);
+  } else if (data?.action === "here") {
+    if (data.to && data.to !== game.user?.id) return;
+    if (noteGM(data.from)) setTimeout(() => resendQueued(), 1000);
   }
 }
 
 export async function resendQueued() {
   if (resending) return 0;
   const list = storage.load();
-  if (!list.length || (!isWriter() && !game.users?.activeGM)) return 0;
+  if (!list.length || (!isWriter() && !writerId())) return 0;
   resending = true;
   const left = [];
   try {
@@ -285,8 +327,11 @@ export class Logger {
   /** Runs fn and logs anything it throws. Returns fn's result, or undefined on error. */
   async guard(label, fn, data) {
     try { return await fn(); } catch (err) {
-      this.error(`${label} failed`, err, data);
-      ui.notifications?.error(game.i18n.format("USEDTPLOG.failed", { module: this.title, label }));
+      // Notice waits for the delivery outcome; the caller does not.
+      this.error(`${label} failed`, err, data).then(outcome => {
+        const key = ["logged", "sent", "queued"].includes(outcome) ? `failed_${outcome}` : "failed_console";
+        ui.notifications?.error(game.i18n.format(`USEDTPLOG.${key}`, { module: this.title, label }));
+      });
       return undefined;
     }
   }
@@ -393,10 +438,15 @@ export async function listLogFiles() {
 
 export async function readAll() {
   const out = [];
+  const ids = new Set();
   for (const path of await listLogFiles()) {
     const list = await readJSON(path);
     if (!Array.isArray(list)) continue;
-    for (const e of list) out.push({ ...e, _file: path });
+    for (const e of list) {
+      if (e?.id && ids.has(e.id)) continue;
+      if (e?.id) ids.add(e.id);
+      out.push({ ...e, _file: path });
+    }
   }
   return out;
 }
