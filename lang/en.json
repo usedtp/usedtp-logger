@@ -58,6 +58,15 @@
       "reopen": "Reopen",
       "showMessage": "Show in chat",
       "notInLog": "That message is not in the chat log."
+    },
+    "selfTest": {
+      "auto": {
+        "name": "Run self-tests after updates",
+        "hint": "When a usedtp module changes version, the GM's browser runs its live tests once after loading the world, in a hidden sandbox it removes afterwards. Results go to the log and a summary is whispered to the GM."
+      },
+      "running": "usedtp self-test: testing {count} updated module(s). Your view switches to a hidden test scene for a moment.",
+      "allPassed": "usedtp self-test: all tests passed.",
+      "someFailed": "usedtp self-test: some tests failed. See the whisper and usedtp Logs."
     }
   }
 }

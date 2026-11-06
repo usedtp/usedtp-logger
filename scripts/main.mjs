@@ -1,5 +1,6 @@
 import * as core from "./core.mjs";
 import { registerMenus, LogViewer } from "./reports-app.mjs";
+import * as selfTest from "./selftest.mjs";
 
 const { MODULE_ID } = core;
 
@@ -8,6 +9,7 @@ const { MODULE_ID } = core;
  *   const log = UsedtpLogger.register("my-module", { title: "My Module" });
  *   log.info("text", data); log.warn(...); log.error("text", err, data); log.unclear(key, "text", data);
  *   log.guard("label", async () => { ... });   log.openReport("error" | "unclear", context);
+ *   UsedtpLogger.selfTest.register("my-module", async t => { ... });   // live tests, see selftest.mjs
  */
 const api = {
   register: core.register,
@@ -15,7 +17,13 @@ const api = {
   openReport: core.openReportDialog,
   openViewer: () => new LogViewer().render(true),
   flush: core.flush,
-  Logger: core.Logger
+  Logger: core.Logger,
+  selfTest: {
+    register: selfTest.register,
+    run: (options = {}) => selfTest.runPending(options),
+    runSuite: selfTest.runSuite,
+    suites: selfTest.registeredSuites
+  }
 };
 globalThis.UsedtpLogger = api;
 
@@ -49,6 +57,7 @@ Hooks.once("init", () => {
     default: false
   });
   registerMenus();
+  selfTest.registerSettings();
   core.captureUncaught();
   Hooks.callAll("usedtpLogger.ready", api);
 });
@@ -59,4 +68,5 @@ Hooks.once("ready", () => {
   setTimeout(() => core.resendQueued(), 3000);
   Hooks.on("userConnected", (user, connected) => core.onUserConnected(user, connected));
   globalThis.addEventListener?.("beforeunload", () => { core.flush(); });
+  selfTest.scheduleAutoRun();
 });

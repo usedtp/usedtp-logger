@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.1.0
+- Self-test runner. Modules register live tests; the GM's browser runs each module's tests once per new version, in a hidden sandbox it removes afterwards. Failures are logged under the module; a summary is whispered to the GM. Setting: Run self-tests after updates (on).
+
 ## 1.0.1
 - Any GM writes its own entries directly. Before, a second GM's entries waited for the active GM and were lost if that GM's browser had the logger off.
 - Player entries go to every GM; one GM writes them, chosen among GMs that announced they run usedtp Logger.

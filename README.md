@@ -32,5 +32,24 @@ log.openReport("error" | "unclear", context);
 ```
 Uncaught errors whose stack points into a registered module's folder are logged automatically.
 
+## Self-tests (live, inside Foundry)
+Each usedtp module can register live tests. When a module's version changes, the GM's browser runs them once, about 8 seconds after the world loads:
+- A hidden scene, actors and combat are made in a "usedtp self-test" folder, then removed. Your view returns to your scene.
+- Test chat cards are GM-only and removed afterwards.
+- Failures show in usedtp Logs under the module's name. A summary is whispered to the GM.
+- A suite that skips itself (for example, because a needed module is off) runs again on the next load.
+- Turn it off with the setting "Run self-tests after updates". Run all suites now from a macro: `UsedtpLogger.selfTest.run({ force: true })`.
+
+For module code:
+```js
+UsedtpLogger.selfTest.register("my-module", async t => {
+  const scene = await t.scene();                      // hidden sandbox scene, viewed by this GM only
+  const actor = await t.actor({ name: "Test", type: "npc" });
+  const token = await t.token(actor, { x: 200, y: 200 });
+  await t.step("does the thing", async () => { t.ok(true, "what should be true"); });
+});
+```
+Helpers: `step`, `ok`, `equal`, `skip`, `waitFor`, `scene`, `actor`, `items` (copy from a compendium), `token`, `combat`, `target`, `fixDice`.
+
 ## Tests
 `npm test` runs Node tests with a mocked Foundry.
