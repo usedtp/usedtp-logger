@@ -1,0 +1,51 @@
+# Pushing a tag X.Y.Z (or publishing a GitHub release with that tag) builds the two files Foundry needs
+# and attaches them to the release:
+#   module.json  (manifest; "latest" always points at the newest release)
+#   module.zip   (the module, with module.json at its root)
+name: Release
+on:
+  push:
+    tags: ["*"]
+  release:
+    types: [published]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check tag matches module.json version
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          FILE_VERSION="$(jq -r .version module.json)"
+          if [ "$TAG_VERSION" != "$FILE_VERSION" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match module.json version $FILE_VERSION"; exit 1
+          fi
+      - name: Write repository URLs into module.json
+        run: |
+          BASE="https://github.com/${GITHUB_REPOSITORY}"
+          jq --arg base "$BASE" --arg tag "$GITHUB_REF_NAME" '
+            .url = $base
+            | .manifest = ($base + "/releases/latest/download/module.json")
+            | .download = ($base + "/releases/download/" + $tag + "/module.zip")
+            | .bugs = ($base + "/issues")
+            | .readme = ($base + "#readme")
+            | .changelog = ($base + "/blob/main/CHANGELOG.md")
+          ' module.json > module.tmp && mv module.tmp module.json
+      - name: Package
+        run: zip -r module.zip module.json scripts styles lang README.md CHANGELOG.md MIGRATION.md
+      - name: Create or update release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body: "See CHANGELOG.md."
+          make_latest: true
+          files: |
+            module.json
+            module.zip
