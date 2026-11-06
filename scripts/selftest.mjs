@@ -15,6 +15,15 @@ import { MODULE_ID, get as getLogger } from "./core.mjs";
  */
 
 const suites = new Map();
+
+/**
+ * Settings that make a roll wait for a person to type a die result. Turned off in this browser while a suite runs,
+ * then restored. Physical Dice Rolls: "Manual Roll Mode" 0 = Never. Core: per-die manual fulfillment.
+ */
+const DICE_ENTRY_OVERRIDES = [
+  { namespace: "physical-dice-rolls", key: "manualRollMode", value: 0, module: "physical-dice-rolls" },
+  { namespace: "core", key: "diceConfiguration", value: {} }
+];
 const AUTO_DELAY_MS = 8000;
 const LOCK_MS = 700;
 const STEP_TIMEOUT_MS = 30000;
@@ -171,6 +180,21 @@ export class TestContext {
   }
 }
 
+/** Turn off manual dice entry for the run. Returns a function that restores every changed setting. */
+async function overrideDiceEntry() {
+  const undo = [];
+  for (const o of DICE_ENTRY_OVERRIDES) {
+    if (o.module && !game.modules?.get(o.module)?.active) continue;
+    if (!game.settings.settings?.has?.(`${o.namespace}.${o.key}`)) continue;
+    try {
+      const before = game.settings.get(o.namespace, o.key);
+      await game.settings.set(o.namespace, o.key, o.value);
+      undo.push(() => game.settings.set(o.namespace, o.key, before));
+    } catch (err) { /* setting not writable here */ }
+  }
+  return async () => { for (const fn of undo.reverse()) { try { await fn(); } catch (err) { /* best effort */ } } };
+}
+
 /** Run one suite now. Returns its summary. */
 export async function runSuite(moduleId) {
   const entry = suites.get(moduleId);
@@ -182,6 +206,7 @@ export async function runSuite(moduleId) {
   const modeKey = ["messageMode", "rollMode"].find(k => game.settings.settings?.has?.(`core.${k}`));
   const rollMode = modeKey ? game.settings.get("core", modeKey) : null;
   const hook = Hooks.on("createChatMessage", m => { if (m.author?.id === game.user.id) t.messages.add(m.id); });
+  const restoreDice = await overrideDiceEntry();
   try {
     // v14 messageMode uses "gm"; the older rollMode used "gmroll".
     if (modeKey) await game.settings.set("core", modeKey, modeKey === "messageMode" ? "gm" : "gmroll");
@@ -191,6 +216,7 @@ export async function runSuite(moduleId) {
   } finally {
     Hooks.off("createChatMessage", hook);
     await t.cleanup();
+    await restoreDice();
     if (modeKey) { try { await game.settings.set("core", modeKey, rollMode); } catch (err) { /* ignore */ } }
   }
   const failed = t.steps.filter(s => !s.pass);

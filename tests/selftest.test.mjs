@@ -83,6 +83,19 @@ test("runPending runs each version once, whispers a summary, and skips are retri
   assert.equal(store.get("usedtp-logger.selfTestState")["mod-c"].version, "1.0.0");
 });
 
+test("manual dice entry is off during the suite and restored after", async () => {
+  game.settings.settings.set("physical-dice-rolls.manualRollMode", {});
+  store.set("physical-dice-rolls.manualRollMode", 1);
+  const realGet = game.modules.get;
+  game.modules.get = id => id === "physical-dice-rolls" ? { active: true } : realGet(id);
+  let during;
+  selfTest.register("mod-e", async t => { during = store.get("physical-dice-rolls.manualRollMode"); await t.step("ok", async () => t.ok(true)); });
+  await selfTest.runSuite("mod-e");
+  game.modules.get = realGet;
+  assert.equal(during, 0, "Never during the run");
+  assert.equal(store.get("physical-dice-rolls.manualRollMode"), 1, "restored after");
+});
+
 test("another browser holding the lock stops this one", async () => {
   await game.settings.set("usedtp-logger", "selfTestLock", { client: "other", at: Date.now() });
   let ran = false;

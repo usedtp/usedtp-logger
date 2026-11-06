@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.1.2
+- Self-tests turn off manual dice entry in the GM's browser while they run (Physical Dice Rolls "Manual Roll Mode", core manual dice), then restore it. Before, a test roll waited for someone to type a die result.
+
 ## 1.1.1
 - Self-test chat cards use Foundry v14's GM-only message mode ("gm"). "gmroll" broke card creation on v14.
 
