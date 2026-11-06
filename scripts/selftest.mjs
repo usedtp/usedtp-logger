@@ -183,7 +183,8 @@ export async function runSuite(moduleId) {
   const rollMode = modeKey ? game.settings.get("core", modeKey) : null;
   const hook = Hooks.on("createChatMessage", m => { if (m.author?.id === game.user.id) t.messages.add(m.id); });
   try {
-    if (modeKey) await game.settings.set("core", modeKey, "gmroll");
+    // v14 messageMode uses "gm"; the older rollMode used "gmroll".
+    if (modeKey) await game.settings.set("core", modeKey, modeKey === "messageMode" ? "gm" : "gmroll");
     await entry.suite(t);
   } catch (err) {
     t.steps.push({ name: "suite setup", pass: false, error: err?.message ?? String(err), stack: err?.stack });
